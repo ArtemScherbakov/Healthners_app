@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "HealthnersApp",
-    "slug": "HealthnersApp",
+    "name": "Healthner",
+    "slug": "healthner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,6 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -19,10 +22,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.healthner.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "be1d9ed6-cfef-4c17-a8d8-dff8cd1cec77"
+      }
     }
   }
 }
