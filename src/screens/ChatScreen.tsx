@@ -18,29 +18,42 @@ import { geminiService } from '../services/geminiService';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { SettingsMenu } from '../components/SettingsMenu';
+import { ConfirmationModal } from '../components/ConfirmationModal';
+import { useApp, useTranslation } from '../context/AppContext';
 
 interface Message {
   text: string;
   isUser: boolean;
 }
 
-const quickReplies = [
-  'Attention span',
-  'Emotional stress',
-  'Inactivity after continuous sitting',
-  'Eye strain',
-];
-
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 
 export const ChatScreen = () => {
   const navigation = useNavigation<ChatScreenNavigationProp>();
+  const { isDarkMode } = useApp();
+  const t = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
-    { text: "Hello, I'm Healthner.\nWhat advice can I give you?", isUser: false },
+    { text: t.initialMessage, isUser: false },
   ]);
   const [inputText, setInputText] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const backgroundColor = isDarkMode ? '#000000' : '#FFFFFF';
+  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const subtitleColor = isDarkMode ? '#CCCCCC' : '#666666';
+  const borderColor = isDarkMode ? '#2C2C2E' : '#E5E5E5';
+  const inputBgColor = isDarkMode ? '#1C1C1E' : '#F1F1F1';
+
+  const quickReplies = [
+    t.quickReplies.attentionSpan,
+    t.quickReplies.emotionalStress,
+    t.quickReplies.inactivity,
+    t.quickReplies.eyeStrain,
+  ];
 
   useEffect(() => {
     const getUserId = async () => {
@@ -56,6 +69,12 @@ export const ChatScreen = () => {
     };
     getUserId();
   }, []);
+
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].isUser === false) {
+      setMessages([{ text: t.initialMessage, isUser: false }]);
+    }
+  }, [t.initialMessage]);
 
   useEffect(() => {
     if (messages.length > 1 && userId) {
@@ -90,7 +109,7 @@ export const ChatScreen = () => {
     setInputText('');
 
     try {
-      const response = await geminiService.generateResponse(inputText);
+      const response = await geminiService.generateResponse(inputText, userId!);
       const botMessage = { text: response, isUser: false };
       setMessages(prev => [...prev, botMessage]);
 
@@ -109,7 +128,7 @@ export const ChatScreen = () => {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await geminiService.generateResponse(text);
+      const response = await geminiService.generateResponse(text, userId!);
       const botMessage = { text: response, isUser: false };
       setMessages(prev => [...prev, botMessage]);
 
@@ -121,6 +140,10 @@ export const ChatScreen = () => {
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const handleClearHistory = () => {
+    setIsConfirmationVisible(true);
   };
 
   const clearHistory = async () => {
@@ -135,7 +158,7 @@ export const ChatScreen = () => {
       await AsyncStorage.removeItem(`chatHistory_${id}`);
       
       setMessages([
-        { text: "Hello, I'm Healthners.\nWhat advice can I give you?", isUser: false },
+        { text: t.initialMessage, isUser: false },
       ]);
       
       console.log('History cleared successfully');
@@ -150,6 +173,7 @@ export const ChatScreen = () => {
         await AsyncStorage.removeItem(`chatHistory_${userId}`);
       }
       await AsyncStorage.removeItem('userToken');
+      setIsSettingsVisible(false);
       navigation.replace('Auth');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -158,23 +182,43 @@ export const ChatScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View style={styles.headerTitles}>
-          <Text style={styles.title}>Healthner</Text>
-          <Text style={styles.subtitle}>Your virtual assistant</Text>
-        </View>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity onPress={clearHistory} style={styles.headerButton}>
-            <Ionicons name="trash-outline" size={24} color="#007AFF" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
+      <View style={[styles.header, { borderBottomColor: borderColor }]}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => setIsSettingsVisible(true)} 
+            style={styles.headerButton}
+          >
+            <Ionicons name="menu-outline" size={24} color={isDarkMode ? '#007AFF' : '#007AFF'} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.headerButton}>
-            <Ionicons name="log-out-outline" size={24} color="#007AFF" />
+          <View style={styles.headerTitles}>
+            <Text style={[styles.title, { color: textColor }]}>Healthners</Text>
+            <Text style={[styles.subtitle, { color: subtitleColor }]}>Your virtual assistant</Text>
+          </View>
+          <TouchableOpacity 
+            onPress={handleClearHistory} 
+            style={[styles.headerButton, styles.clearButton]}
+          >
+            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.contentContainer}>
+      <SettingsMenu 
+        isVisible={isSettingsVisible}
+        onClose={() => setIsSettingsVisible(false)}
+        onLogout={handleLogout}
+      />
+
+      <ConfirmationModal
+        isVisible={isConfirmationVisible}
+        onClose={() => setIsConfirmationVisible(false)}
+        onConfirm={clearHistory}
+        title={t.deleteHistory}
+        message={t.deleteHistoryConfirm}
+      />
+
+      <View style={[styles.contentContainer, { backgroundColor }]}>
         <ScrollView 
           style={styles.messagesContainer}
           ref={scrollViewRef}
@@ -185,12 +229,13 @@ export const ChatScreen = () => {
               key={index}
               text={message.text}
               isUser={message.isUser}
+              isDarkMode={isDarkMode}
             />
           ))}
         </ScrollView>
       </View>
 
-      <View style={styles.bottomContainer}>
+      <View style={[styles.bottomContainer, { borderTopColor: borderColor, backgroundColor }]}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -201,17 +246,18 @@ export const ChatScreen = () => {
               key={index}
               text={reply}
               onPress={() => handleQuickReply(reply)}
+              isDarkMode={isDarkMode}
             />
           ))}
         </ScrollView>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderTopColor: borderColor, backgroundColor }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: inputBgColor, color: textColor }]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Message Healthners"
-            placeholderTextColor="#999999"
+            placeholder={t.messagePlaceholder}
+            placeholderTextColor={isDarkMode ? '#666666' : '#999999'}
             multiline
           />
           <TouchableOpacity
@@ -222,7 +268,7 @@ export const ChatScreen = () => {
             <Ionicons
               name="send"
               size={24}
-              color={inputText.trim() ? "#007AFF" : "#CCCCCC"}
+              color={inputText.trim() ? "#007AFF" : isDarkMode ? '#666666' : '#CCCCCC'}
             />
           </TouchableOpacity>
         </View>
@@ -244,22 +290,25 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
-    position: 'relative',
   },
-  headerTitles: {
-    width: '100%',
+  headerContent: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginTop: 32,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    position: 'absolute',
-    right: 16,
-    top: 8,
+  headerTitles: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerButton: {
     padding: 8,
+    position: 'absolute',
+    left: 0,
+    zIndex: 1,
+  },
+  clearButton: {
+    left: undefined,
+    right: 0,
   },
   title: {
     fontSize: 24,
@@ -286,10 +335,10 @@ const styles = StyleSheet.create({
   },
   quickRepliesContainer: {
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 8,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 22,
+    marginBottom: 0,
   },
   inputContainer: {
     flexDirection: 'row',

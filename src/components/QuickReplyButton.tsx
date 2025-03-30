@@ -1,40 +1,47 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 interface QuickReplyButtonProps {
   text: string;
   onPress: () => void;
+  isDarkMode: boolean;
 }
 
-export const QuickReplyButton: React.FC<QuickReplyButtonProps> = ({ text, onPress }) => {
+export const QuickReplyButton = ({ text, onPress, isDarkMode }: QuickReplyButtonProps) => {
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.button} onPress={onPress}>
-        <Text style={styles.text} numberOfLines={1}>{text}</Text>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity 
+      style={[
+        styles.button,
+        { backgroundColor: isDarkMode ? '#1C1C1E' : '#F1F1F1' }
+      ]} 
+      onPress={onPress}
+    >
+      <Text 
+        style={[
+          styles.text,
+          { color: isDarkMode ? '#FFFFFF' : '#000000' }
+        ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {text}
+      </Text>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    height: 10,
-    marginRight: 6,
-    marginBottom: 6,
-  },
   button: {
-    backgroundColor: '#F1F1F1',
-    height: 40,
     paddingHorizontal: 12,
-    borderRadius: 14,
-    marginRight: 6,
-    marginBottom: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    marginVertical: 4,
+    minHeight: 36,
+    flex: 1,
   },
   text: {
-    color: '#000000',
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
   },
 }); 

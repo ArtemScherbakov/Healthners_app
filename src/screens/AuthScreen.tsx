@@ -1,19 +1,18 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-  Auth: undefined;
-  Chat: undefined;
-};
+import { RootStackParamList } from '../types/navigation';
+import { useApp, useTranslation } from '../context/AppContext';
 
 type AuthScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Auth'>;
 
 export const AuthScreen = () => {
   const navigation = useNavigation<AuthScreenNavigationProp>();
+  const { isDarkMode } = useApp();
+  const t = useTranslation();
 
   const handleEnterApp = async () => {
     try {
@@ -26,10 +25,19 @@ export const AuthScreen = () => {
     }
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#FFFFFF';
+  const textColor = isDarkMode ? '#FFFFFF' : '#000000';
+  const subtitleColor = isDarkMode ? '#CCCCCC' : '#666666';
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Healthner</Text>
-      <Text style={styles.subtitle}>Welcome to our app!</Text>
+    <View style={[styles.container, { backgroundColor }]}>
+      <Image 
+        source={isDarkMode ? require('../../assets/laptop-medical_dark.png') : require('../../assets/laptop-medical.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      <Text style={[styles.title, { color: textColor }]}>Healthners</Text>
+      <Text style={[styles.subtitle, { color: subtitleColor }]}>{t.welcome}</Text>
       <TouchableOpacity 
         style={styles.buttonContainer}
         onPress={handleEnterApp}
@@ -40,7 +48,7 @@ export const AuthScreen = () => {
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
         >
-          <Text style={styles.buttonText}>Get Started</Text>
+          <Text style={styles.buttonText}>{t.getStarted}</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -53,36 +61,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+  },
+  logo: {
+    width: 250,
+    height: 250,
+    marginBottom: -35,
+    marginTop: -130,
+    resizeMode: 'contain',
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-    color: '#000000',
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 18,
-    color: '#666666',
-    marginBottom: 32,
-    textAlign: 'center',
+    marginBottom: 40,
   },
   buttonContainer: {
     width: '100%',
-    height: 56,
     borderRadius: 12,
     overflow: 'hidden',
   },
   gradient: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
-    textAlign: 'center',
   },
 }); 
